@@ -1,0 +1,27 @@
+annotation_category(id_annotation_category, id_category, id_annotation)
+
+category(id_category, id_parent_category, name, description, image_url, status)
+
+citizen(id_citizen, name, email, phone, address, latitude, longitude, status)
+
+city(id_city, id_department, name, dane_code)
+
+commune(id_commune, id_city, name, status, created_at, updated_at)
+
+department(id_department, name, dane_code)
+
+entity(id_entity, name, nit, phone, email, address, logo_url, status)
+
+evidence(id_evidence, id_annotation, file_url, file_type, file_size, upload_date)
+
+interested_party(id_interested_party, id_entity, id_annotation, association_date)
+
+neighborhood(id_neighborhood, id_commune, name, status, created_at, updated_at)
+
+official(id_official, id_entity, name, email, phone, role, status, last_latitude, last_longitude, last_gps_update, gps_active)
+
+point(id_point, id_neighborhood, id_annotation, latitude, longitude, order, point_type)
+
+vote(id_vote, id_citizen, id_annotation, stars, comment, vote_date)
+
+annotation(id_annotation, id_neighborhood, id_citizen, description, latitude, longitude, status, registration_date)

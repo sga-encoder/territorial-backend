@@ -1,0 +1,16 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite
+*.db
+instance/
+.env/
+env/
+.env.local
+app/uploads/*
+!app/uploads/.gitkeep
+!app/uploads/logos/.gitkeep
+!app/uploads/categories/.gitkeep
+!app/uploads/evidences/.gitkeep
