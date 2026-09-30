@@ -14,3 +14,5 @@ app/uploads/*
 !app/uploads/logos/.gitkeep
 !app/uploads/categories/.gitkeep
 !app/uploads/evidences/.gitkeep
+.venv/
+venv/
