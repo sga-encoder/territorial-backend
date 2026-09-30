@@ -54,6 +54,20 @@ Initialize database with seed data:
 python scripts/seed.py
 ```
 
+Or fill every table with rich demo data for exhibitions (drops and recreates the database; generates SVG images in `UPLOAD_FOLDER`):
+
+```bash
+python scripts/seed_demo.py
+```
+
+Then create a Firebase e-mail/password login (password `Admin123*`) for every seeded official and citizen. The key is the frontend's `environment.firebase.apiKey`:
+
+```bash
+FIREBASE_API_KEY=<web api key> python scripts/seed_firebase_users.py
+```
+
+Demo accounts: `admin@example.com` (admin), `funcionario@example.com` (official), `ciudadano@example.com` (citizen).
+
 Run the API:
 
 ```bash
