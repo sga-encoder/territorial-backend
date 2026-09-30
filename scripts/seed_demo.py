@@ -6,9 +6,10 @@ Usage:
     python scripts/seed_demo.py
 
 Output is deterministic (fixed random seed). Person names are invented and all
-e-mails use the reserved example.com domain. Images are generated as SVG files
-inside UPLOAD_FOLDER and stored as /api/images/<folder>/<file> (same format as
-app/utils/files.py). Firebase login accounts are created separately with
+e-mails use the reserved example.com domain. Images are generated as SVG; with
+CLOUDINARY_URL set they are uploaded to Cloudinary as PNG (fixed public ids, so
+re-running overwrites them), otherwise they are written to UPLOAD_FOLDER and
+stored as /api/images/<folder>/<file> (same format as app/utils/files.py). Firebase login accounts are created separately with
 scripts/seed_firebase_users.py.
 """
 import json
@@ -24,6 +25,7 @@ from xml.sax.saxutils import escape
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 from app import create_app  # noqa: E402
 from app.extensions import db  # noqa: E402
+from app.utils.files import cloudinary_enabled, upload_to_cloudinary  # noqa: E402
 from app.models.annotation import Annotation  # noqa: E402
 from app.models.annotation_category import AnnotationCategory  # noqa: E402
 from app.models.category import Category  # noqa: E402
@@ -262,12 +264,16 @@ def address(rng):
     return f"{rng.choice(STREET_TYPES)} {rng.randint(10, 80)} # {rng.randint(5, 99)}-{rng.randint(1, 99):02d}"
 
 
-def write_svg(folder, filename, content):
+def store_image(folder, name, svg):
+    """Stores a generated SVG and returns (url, size_in_bytes, mime_type)."""
+    data = svg.encode("utf-8")
+    if cloudinary_enabled():
+        uploaded = upload_to_cloudinary(data, folder, public_id=name, image_format="png")
+        return uploaded["secure_url"], uploaded.get("bytes"), "image/png"
     target = Path(UPLOAD_ROOT) / folder
     target.mkdir(parents=True, exist_ok=True)
-    data = content.encode("utf-8")
-    (target / filename).write_bytes(data)
-    return f"/api/images/{folder}/{filename}", len(data)
+    (target / f"{name}.svg").write_bytes(data)
+    return f"/api/images/{folder}/{name}.svg", len(data), "image/svg+xml"
 
 
 def initials(name):
@@ -457,7 +463,7 @@ def seed_territory(rng, cities):
 def seed_entities(rng):
     entities = []
     for name, nit, entity_slug, color, _ in ENTITIES:
-        logo_url, _ = write_svg("logos", f"{entity_slug}.svg", logo_svg(name, color))
+        logo_url, _, _ = store_image("logos", entity_slug, logo_svg(name, color))
         entities.append(Entity(name=name, nit=nit, phone=f"(606) 8{rng.randint(10, 99)} {rng.randint(10, 99)} {rng.randint(10, 99)}",
                                email=f"contacto.{entity_slug}@{EMAIL_DOMAIN}", address=address(rng),
                                logo_url=logo_url, status="active" if entity_slug != "altosdelruiz" else "inactive"))
@@ -509,12 +515,12 @@ def seed_categories():
     """Returns [(parent_name, color, subcategory, texts)]."""
     subcategories = []
     for parent_name, (color, description, children) in CATEGORIES.items():
-        image_url, _ = write_svg("categories", f"{slug(parent_name)}.svg", category_svg(parent_name, color))
+        image_url, _, _ = store_image("categories", slug(parent_name), category_svg(parent_name, color))
         parent = Category(name=parent_name, description=description, image_url=image_url, status="active")
         db.session.add(parent)
         db.session.flush()
         for child_name, child_description, texts in children:
-            image_url, _ = write_svg("categories", f"{slug(child_name)}.svg", category_svg(child_name, color))
+            image_url, _, _ = store_image("categories", slug(child_name), category_svg(child_name, color))
             child = Category(id_parent_category=parent.id_category, name=child_name,
                              description=child_description, image_url=image_url, status="active")
             db.session.add(child)
@@ -566,10 +572,10 @@ def seed_annotations(rng, neighborhoods, citizens, subcategories, entities):
 
         for _ in range(rng.randint(1, 2)):
             evidence_number += 1
-            file_url, size = write_svg("evidences", f"evidencia-{evidence_number:04d}.svg",
+            file_url, size, file_type = store_image("evidences", f"evidencia-{evidence_number:04d}",
                                        evidence_svg(rng, f"{subcategory.name} · {neighborhood.name}", description, color))
             db.session.add(Evidence(id_annotation=annotation.id_annotation, file_url=file_url,
-                                    file_type="image/svg+xml", file_size=size,
+                                    file_type=file_type, file_size=size,
                                     upload_date=random_date(rng, 0, after=created)))
             counts["evidences"] += 1
 
@@ -615,7 +621,7 @@ def main():
         print("Demo seed OK:")
         for table, count in summary.items():
             print(f"  {table:<22}{count}")
-        print(f"Imágenes en: {UPLOAD_ROOT}")
+        print(f"Imágenes en: {'Cloudinary' if cloudinary_enabled() else UPLOAD_ROOT}")
         print("Cuentas demo: admin@example.com, funcionario@example.com, ciudadano@example.com")
         print("Crear logins Firebase: FIREBASE_API_KEY=<web api key> python scripts/seed_firebase_users.py")
 
