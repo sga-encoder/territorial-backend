@@ -12,6 +12,8 @@ services:
         generateValue: true
       - key: DATABASE_URL
         sync: false
+      - key: CLOUDINARY_URL
+        sync: false
       - key: UPLOAD_FOLDER
         value: app/uploads
       - key: MAX_CONTENT_LENGTH

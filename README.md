@@ -54,7 +54,7 @@ Initialize database with seed data:
 python scripts/seed.py
 ```
 
-Or fill every table with rich demo data for exhibitions (drops and recreates the database; generates SVG images in `UPLOAD_FOLDER`):
+Or fill every table with rich demo data for exhibitions (drops and recreates the database; generated images go to Cloudinary when `CLOUDINARY_URL` is set, otherwise to `UPLOAD_FOLDER`):
 
 ```bash
 python scripts/seed_demo.py
@@ -93,6 +93,8 @@ Example:
 ```text
 GET /api/images/logos/alcaldia.png
 ```
+
+When `CLOUDINARY_URL` (`cloudinary://<api_key>:<api_secret>@<cloud_name>`) is set, uploads for logos, categories and evidences go to Cloudinary under `territorial/<folder>` and the stored URL is the absolute `https://res.cloudinary.com/...` link. This is required on Render, whose disk is ephemeral. Without it, files are saved to `UPLOAD_FOLDER` and served by the endpoint above.
 
 ## Pagination behavior
 
